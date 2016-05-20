@@ -17,15 +17,11 @@ var _fredcy$storage$Native_Storage = function()
 
     var length = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)	{
 	if (storageAvailable('localStorage')) {
-	    callback(_elm_lang$core$Native_Scheduler.succeed({
-		length: localStorage.length(),
-	    }));
+            var length = localStorage.length;
+	    return callback(_elm_lang$core$Native_Scheduler.succeed(length));
 	}
 	else {
-	    // TODO: how to return a failure???
-	    callback(_elm_lang$core$Native_Scheduler.succeed({
-		length: 999,
-	    }));
+	    return callback(_elm_lang$core$Native_Scheduler.fail({ctor: 'NoStorage'}));
 	}
     });
 

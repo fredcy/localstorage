@@ -25,7 +25,7 @@ type alias Model = {
 init : ( Model, Cmd Msg )
 init =
     ( { length = 0 }
-    , Cmd.none
+    , Task.perform never Length Storage.length
     )
 
 
@@ -35,7 +35,9 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    model ! []
+    case msg |> Debug.log "msg" of
+      Length len ->
+          { model | length = len } ! []
 
 
 view : Model -> Html Msg
