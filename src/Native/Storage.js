@@ -1,6 +1,5 @@
 var _fredcy$storage$Native_Storage = function()
 {
-
     function storageAvailable(type) {
 	try {
 	    var storage = window[type],
@@ -12,6 +11,14 @@ var _fredcy$storage$Native_Storage = function()
 	catch(e) {
 	    return false;
 	}
+    }
+
+    function set(key, value) {
+        window.console.log("set", key, value);
+        return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+            localStorage.setItem(key, value);
+            return callback(_elm_lang$core$Native_Scheduler.succeed(value));
+        });
     }
 
 
@@ -27,6 +34,7 @@ var _fredcy$storage$Native_Storage = function()
 
     return {
 	length: length,
+        set: F2(set),
     };
 
 }();

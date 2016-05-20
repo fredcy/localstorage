@@ -1,7 +1,9 @@
 effect module Storage
     where { subscription = MySub }
     exposing
-        ( length
+        ( Error(..)
+        , length
+        , set
         , changes
         )
 
@@ -24,6 +26,10 @@ type alias StorageEvent =
     }
 
 
+type Error
+    = NoStorage
+
+
 storageEvent : Json.Decode.Decoder StorageEvent
 storageEvent =
     Json.Decode.succeed StorageEvent
@@ -32,9 +38,16 @@ storageEvent =
 
 {-| Get the current storage length.
 -}
-length : Task x Int
+length : Task Error Int
 length =
     Native.Storage.length
+
+
+{-| Set a value in storage.
+-}
+set : String -> String -> Task Error String
+set =
+    Native.Storage.set
 
 
 {-| Subscribe to any changes in storage.
