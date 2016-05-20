@@ -29,16 +29,22 @@ type alias Value =
 
 
 type alias Model =
-    { keys : List Key
-    , editKey : Key
-    , values : Dict Key Value
+    { keys :
+        List Key
+        -- all keys in LocalStorage
+    , editKey :
+        Key
+        -- key to be edited, possibly created if new
+    , values :
+        Dict Key Value
+        -- a shadow of the keys and values in LocalStorate
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { editKey = "default", keys = [], values = Dict.empty }
-    , Task.perform Error RequestValues LocalStorage.keys
+    , Task.perform Error SetKeys LocalStorage.keys
     )
 
 
@@ -46,10 +52,11 @@ type Msg
     = Error LocalStorage.Error
     | SetValue Key Value
     | SetEditKey Key
-    | RequestValues (List Key)
+    | SetKeys (List Key)
     | KeyValue Key (Maybe Value)
     | Clear
     | Refresh
+    | ChangeEvent LocalStorage.Event
     | NoOp
 
 
@@ -66,7 +73,7 @@ update msg model =
         SetEditKey key ->
             { model | editKey = key } ! []
 
-        RequestValues keys ->
+        SetKeys keys ->
             { model | keys = keys } ! [ requestValues keys ]
 
         KeyValue key valueMaybe ->
@@ -85,7 +92,10 @@ update msg model =
             model ! [ Task.perform Error (always Refresh) LocalStorage.clear ]
 
         Refresh ->
-            model ! [ Task.perform Error RequestValues LocalStorage.keys ]
+            model ! [ Task.perform Error SetKeys LocalStorage.keys ]
+
+        ChangeEvent event ->
+            model ! []
 
         Error err ->
             model ! []
@@ -157,4 +167,4 @@ viewClearButton model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    LocalStorage.changes ChangeEvent

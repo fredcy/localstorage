@@ -2,6 +2,7 @@ effect module LocalStorage
     where { subscription = MySub }
     exposing
         ( Error(..)
+        , Event
         , get
         , set
         , remove
@@ -119,7 +120,7 @@ onEffects router newSubs oldState =
                 &> Task.succeed Nothing
 
         ( Nothing, _ ) ->
-            Process.spawn (Dom.onDocument "onstorage" event (Platform.sendToSelf router))
+            Process.spawn (Dom.onWindow "storage" event (Platform.sendToSelf router))
                 `Task.andThen` \pid ->
                                 Task.succeed (Just { subs = newSubs, pid = pid })
 
