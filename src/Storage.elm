@@ -39,7 +39,7 @@ storageEvent =
 
 {-| get a value in storage.
 -}
-get : String -> Task Error String
+get : String -> Task Error (Maybe String)
 get =
     Native.Storage.get
 
