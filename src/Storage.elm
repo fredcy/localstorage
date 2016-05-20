@@ -3,7 +3,9 @@ effect module Storage
     exposing
         ( Error(..)
         , length
+        , get
         , set
+        , keys
         , changes
         )
 
@@ -43,11 +45,23 @@ length =
     Native.Storage.length
 
 
+{-| get a value in storage.
+-}
+get : String -> Task Error String
+get =
+    Native.Storage.get
+
+
 {-| Set a value in storage.
 -}
 set : String -> String -> Task Error String
 set =
     Native.Storage.set
+
+
+keys : Task Error (List String)
+keys =
+    Native.Storage.keys
 
 
 {-| Subscribe to any changes in storage.
