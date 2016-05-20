@@ -27,6 +27,16 @@ var _fredcy$storage$Native_Storage = function()
     }
     
 
+    function remove (key) {
+        return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+            localStorage.removeItem(key);
+            return callback(_elm_lang$core$Native_Scheduler.succeed(
+                {ctor: '_Tuple0'}
+            ));
+        });
+    }
+    
+
     var keys = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
         var _keys = [];
         for (var i = 0; i < localStorage.length; i++) {
@@ -50,6 +60,7 @@ var _fredcy$storage$Native_Storage = function()
     return {
         get: get,
         set: F2(set),
+        remove: remove,
         keys: keys,
     };
 

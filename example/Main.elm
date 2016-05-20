@@ -40,15 +40,22 @@ type Msg
     | Key String
     | Keys (List String)
     | KeyValue String (Maybe String)
+    | ValueRemoved
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
         SetValue val ->
-            model ! [ Task.perform Error ValueSet (Storage.set model.key val) ]
+            if val == "" then
+                model ! [ Task.perform Error (always ValueRemoved) (Storage.remove model.key) ]
+            else
+                model ! [ Task.perform Error ValueSet (Storage.set model.key val) ]
 
         ValueSet _ ->
+            model ! [ Task.perform Error Keys Storage.keys ]
+
+        ValueRemoved ->
             model ! [ Task.perform Error Keys Storage.keys ]
 
         Key key ->

@@ -4,6 +4,7 @@ effect module Storage
         ( Error(..)
         , get
         , set
+        , remove
         , keys
         , changes
         )
@@ -49,6 +50,11 @@ get =
 set : String -> String -> Task Error String
 set =
     Native.Storage.set
+
+
+remove : String -> Task Error ()
+remove =
+    Native.Storage.remove
 
 
 keys : Task Error (List String)
