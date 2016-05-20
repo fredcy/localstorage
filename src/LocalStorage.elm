@@ -1,4 +1,4 @@
-effect module Storage
+effect module LocalStorage
     where { subscription = MySub }
     exposing
         ( Error(..)
@@ -18,12 +18,12 @@ effect module Storage
 import Dom.LowLevel as Dom
 import Json.Decode exposing ((:=))
 import Json.Decode.Extra exposing ((|:))
-import Native.Storage
+import Native.LocalStorage
 import Process
 import Task exposing (Task)
 
 
-type alias StorageEvent =
+type alias Event =
     { key : String
     }
 
@@ -32,9 +32,9 @@ type Error
     = NoStorage
 
 
-storageEvent : Json.Decode.Decoder StorageEvent
-storageEvent =
-    Json.Decode.succeed StorageEvent
+event : Json.Decode.Decoder Event
+event =
+    Json.Decode.succeed Event
         |: ("key" := Json.Decode.string)
 
 
@@ -42,29 +42,29 @@ storageEvent =
 -}
 get : String -> Task Error (Maybe String)
 get =
-    Native.Storage.get
+    Native.LocalStorage.get
 
 
 {-| Set a value in storage.
 -}
 set : String -> String -> Task Error String
 set =
-    Native.Storage.set
+    Native.LocalStorage.set
 
 
 remove : String -> Task Error ()
 remove =
-    Native.Storage.remove
+    Native.LocalStorage.remove
 
 
 keys : Task Error (List String)
 keys =
-    Native.Storage.keys
+    Native.LocalStorage.keys
 
 
 {-| Subscribe to any changes in storage.
 -}
-changes : (StorageEvent -> msg) -> Sub msg
+changes : (Event -> msg) -> Sub msg
 changes tagger =
     subscription (MySub tagger)
 
@@ -74,7 +74,7 @@ changes tagger =
 
 
 type MySub msg
-    = MySub (StorageEvent -> msg)
+    = MySub (Event -> msg)
 
 
 subMap : (a -> b) -> MySub a -> MySub b
@@ -102,7 +102,7 @@ init =
     t1 `Task.andThen` \_ -> t2
 
 
-onEffects : Platform.Router msg StorageEvent -> List (MySub msg) -> State msg -> Task Never (State msg)
+onEffects : Platform.Router msg Event -> List (MySub msg) -> State msg -> Task Never (State msg)
 onEffects router newSubs oldState =
     case ( oldState, newSubs ) of
         ( Nothing, [] ) ->
@@ -113,7 +113,7 @@ onEffects router newSubs oldState =
                 &> Task.succeed Nothing
 
         ( Nothing, _ ) ->
-            Process.spawn (Dom.onDocument "onstorage" storageEvent (Platform.sendToSelf router))
+            Process.spawn (Dom.onDocument "onstorage" event (Platform.sendToSelf router))
                 `Task.andThen` \pid ->
                                 Task.succeed (Just { subs = newSubs, pid = pid })
 
@@ -121,7 +121,7 @@ onEffects router newSubs oldState =
             Task.succeed (Just { subs = newSubs, pid = pid })
 
 
-onSelfMsg : Platform.Router msg StorageEvent -> StorageEvent -> State msg -> Task Never (State msg)
+onSelfMsg : Platform.Router msg Event -> Event -> State msg -> Task Never (State msg)
 onSelfMsg router dimensions state =
     case state of
         Nothing ->

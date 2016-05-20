@@ -6,7 +6,7 @@ import Html exposing (Html)
 import Html.App as Html
 import Html.Events
 import Task
-import Storage
+import LocalStorage
 
 
 main : Program Never
@@ -29,12 +29,12 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { key = "default", keys = [], values = Dict.empty }
-    , Task.perform Error Keys Storage.keys
+    , Task.perform Error Keys LocalStorage.keys
     )
 
 
 type Msg
-    = Error Storage.Error
+    = Error LocalStorage.Error
     | SetValue String
     | ValueSet String
     | Key String
@@ -48,15 +48,15 @@ update msg model =
     case msg |> Debug.log "msg" of
         SetValue val ->
             if val == "" then
-                model ! [ Task.perform Error (always ValueRemoved) (Storage.remove model.key) ]
+                model ! [ Task.perform Error (always ValueRemoved) (LocalStorage.remove model.key) ]
             else
-                model ! [ Task.perform Error ValueSet (Storage.set model.key val) ]
+                model ! [ Task.perform Error ValueSet (LocalStorage.set model.key val) ]
 
         ValueSet _ ->
-            model ! [ Task.perform Error Keys Storage.keys ]
+            model ! [ Task.perform Error Keys LocalStorage.keys ]
 
         ValueRemoved ->
-            model ! [ Task.perform Error Keys Storage.keys ]
+            model ! [ Task.perform Error Keys LocalStorage.keys ]
 
         Key key ->
             { model | key = key } ! []
@@ -84,7 +84,7 @@ requestValues : List String -> Cmd Msg
 requestValues keys =
     let
         requestKey key =
-            Task.perform Error (KeyValue key) (Storage.get key)
+            Task.perform Error (KeyValue key) (LocalStorage.get key)
     in
         Cmd.batch <| List.map requestKey keys
 
