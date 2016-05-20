@@ -30,14 +30,14 @@ type alias Value =
 
 type alias Model =
     { keys : List Key
-    , key : Key
+    , editKey : Key
     , values : Dict Key Value
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { key = "default", keys = [], values = Dict.empty }
+    ( { editKey = "default", keys = [], values = Dict.empty }
     , Task.perform Error RequestValues LocalStorage.keys
     )
 
@@ -45,7 +45,7 @@ init =
 type Msg
     = Error LocalStorage.Error
     | SetValue Key Value
-    | SetKey Value
+    | SetEditKey Key
     | RequestValues (List Key)
     | KeyValue Key (Maybe Value)
     | Clear
@@ -60,10 +60,11 @@ update msg model =
             if val == "" then
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
             else
+                -- Could optimize this to avoid full refresh, but have to handle case of new key too.
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.set key val) ]
 
-        SetKey key ->
-            { model | key = key } ! []
+        SetEditKey key ->
+            { model | editKey = key } ! []
 
         RequestValues keys ->
             { model | keys = keys } ! [ requestValues keys ]
@@ -111,8 +112,8 @@ view model =
 viewStorage : Model -> Html Msg
 viewStorage model =
     Html.div []
-        [ Html.input [ Html.Events.onInput SetKey, Html.id "key" ] []
-        , Html.input [ Html.Events.onInput (SetValue model.key) ] []
+        [ Html.input [ Html.Events.onInput SetEditKey, Html.id "key" ] []
+        , Html.input [ Html.Events.onInput (SetValue model.editKey) ] []
         , viewKeyValues model
         , viewClearButton model
         ]
