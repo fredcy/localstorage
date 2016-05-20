@@ -3,6 +3,8 @@ effect module LocalStorage
     exposing
         ( Error(..)
         , Event
+        , Key
+        , Value
         , get
         , set
         , remove
@@ -25,8 +27,19 @@ import Process
 import Task exposing (Task)
 
 
+type alias Key =
+    String
+
+
+type alias Value =
+    String
+
+
 type alias Event =
-    { key : String
+    { key : Key
+    , oldValue : Value
+    , newValue : Value
+    , url : String
     }
 
 
@@ -38,6 +51,9 @@ event : Json.Decode.Decoder Event
 event =
     Json.Decode.succeed Event
         |: ("key" := Json.Decode.string)
+        |: ("oldValue" := Json.Decode.string)
+        |: ("newValue" := Json.Decode.string)
+        |: ("url" := Json.Decode.string)
 
 
 {-| get a value in storage.

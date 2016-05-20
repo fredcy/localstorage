@@ -1,4 +1,17 @@
-module Main exposing (..)
+module Main exposing (main)
+
+{-| This is an example of using the LocalStorage APIs.
+
+It displays the current value of the browser's localstorage and allows the user
+to create, edit, and delete keys and values.
+
+The Model.keys and Model.values values are treated here as a shadow of
+localstorage.
+
+Setting a value to empty is treated here as request to remove the key/value pair
+from localstorage.
+
+-}
 
 import Basics.Extra exposing (never)
 import Dict exposing (Dict)
@@ -21,11 +34,11 @@ main =
 
 
 type alias Key =
-    String
+    LocalStorage.Key
 
 
 type alias Value =
-    String
+    LocalStorage.Value
 
 
 type alias Model =
@@ -44,7 +57,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { editKey = "default", keys = [], values = Dict.empty }
-    , Task.perform Error SetKeys LocalStorage.keys
+    , Task.perform Error SetLocalKeys LocalStorage.keys
     )
 
 
@@ -52,8 +65,8 @@ type Msg
     = Error LocalStorage.Error
     | SetValue Key Value
     | SetEditKey Key
-    | SetKeys (List Key)
-    | KeyValue Key (Maybe Value)
+    | SetLocalKeys (List Key)
+    | SetLocalValue Key (Maybe Value)
     | Clear
     | Refresh
     | ChangeEvent LocalStorage.Event
@@ -67,16 +80,17 @@ update msg model =
             if val == "" then
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
             else
-                -- Could optimize this to avoid full refresh, but have to handle case of new key too.
+                -- Could optimize this to avoid full refresh, but have to handle
+                -- case of new key too.
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.set key val) ]
 
         SetEditKey key ->
             { model | editKey = key } ! []
 
-        SetKeys keys ->
+        SetLocalKeys keys ->
             { model | keys = keys } ! [ requestValues keys ]
 
-        KeyValue key valueMaybe ->
+        SetLocalValue key valueMaybe ->
             case valueMaybe of
                 Just value ->
                     let
@@ -92,7 +106,7 @@ update msg model =
             model ! [ Task.perform Error (always Refresh) LocalStorage.clear ]
 
         Refresh ->
-            model ! [ Task.perform Error SetKeys LocalStorage.keys ]
+            model ! [ Task.perform Error SetLocalKeys LocalStorage.keys ]
 
         ChangeEvent event ->
             model ! []
@@ -104,11 +118,13 @@ update msg model =
             model ! []
 
 
+{-| Create a command to request the values from localstorage of the given keys.
+-}
 requestValues : List Key -> Cmd Msg
 requestValues keys =
     let
         requestKey key =
-            Task.perform Error (KeyValue key) (LocalStorage.get key)
+            Task.perform Error (SetLocalValue key) (LocalStorage.get key)
     in
         Cmd.batch <| List.map requestKey keys
 
@@ -134,6 +150,7 @@ viewKeyValues model =
     Html.ol [] (List.map (viewKey model) model.keys)
 
 
+valEdit : Key -> Value -> Html Msg
 valEdit key val =
     Html.input
         [ Html.class "valEdit"
@@ -161,10 +178,14 @@ viewKey model key =
             ]
 
 
+viewClearButton : Model -> Html Msg
 viewClearButton model =
     Html.button [ Html.Events.onClick Clear ] [ Html.text "clear" ]
 
 
+{-| Subscribe to localstorage events. These events generally trigger only for
+localstorage changes made in *other* windows, not the window of this program.
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     LocalStorage.changes ChangeEvent
