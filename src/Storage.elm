@@ -2,7 +2,6 @@ effect module Storage
     where { subscription = MySub }
     exposing
         ( Error(..)
-        , length
         , get
         , set
         , keys
@@ -11,7 +10,7 @@ effect module Storage
 
 {-| TODO
 
-@docs length
+@docs set, get, keys
 
 -}
 
@@ -36,13 +35,6 @@ storageEvent : Json.Decode.Decoder StorageEvent
 storageEvent =
     Json.Decode.succeed StorageEvent
         |: ("key" := Json.Decode.string)
-
-
-{-| Get the current storage length.
--}
-length : Task Error Int
-length =
-    Native.Storage.length
 
 
 {-| get a value in storage.

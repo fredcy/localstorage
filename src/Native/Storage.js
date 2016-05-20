@@ -28,13 +28,11 @@ var _fredcy$storage$Native_Storage = function()
     
 
     var keys = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-        var length = localStorage.length;
         var _keys = [];
-        for (var i = 0; i < length; i++) {
+        for (var i = 0; i < localStorage.length; i++) {
             var key = localStorage.key(i);
             _keys.push(key);
         }
-        window.console.log("keys", _keys);
         return callback(_elm_lang$core$Native_Scheduler.succeed(
             _elm_lang$core$Native_List.fromArray(_keys)
         ));
@@ -49,18 +47,7 @@ var _fredcy$storage$Native_Storage = function()
     }
 
 
-    var length = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)	{
-	if (storageAvailable('localStorage')) {
-            var length = localStorage.length;
-	    return callback(_elm_lang$core$Native_Scheduler.succeed(length));
-	}
-	else {
-	    return callback(_elm_lang$core$Native_Scheduler.fail({ctor: 'NoStorage'}));
-	}
-    });
-
     return {
-	length: length,
         get: get,
         set: F2(set),
         keys: keys,

@@ -19,27 +19,22 @@ main =
 
 
 type alias Model =
-    { length : Int
-    , keys : List String
+    { keys : List String
     , key : String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { length = 0, key = "default", keys = [] }
-    , Cmd.batch
-        [ Task.perform Error Length Storage.length
-        , Task.perform Error Keys Storage.keys
-        ]
+    ( { key = "default", keys = [] }
+    , Task.perform Error Keys Storage.keys
     )
 
 
 type Msg
-    = Length Int
-    | Value String
+    = Error Storage.Error
+    | SetValue String
     | ValueSet String
-    | Error Storage.Error
     | Key String
     | Keys (List String)
 
@@ -47,14 +42,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
-        Length len ->
-            { model | length = len } ! []
-
-        Value val ->
+        SetValue val ->
             model ! [ Task.perform Error ValueSet (Storage.set model.key val) ]
 
         ValueSet _ ->
-            model ! [ Task.perform Error Length Storage.length ]
+            model ! [ Task.perform Error Keys Storage.keys ]
 
         Key key ->
             { model | key = key } ! []
@@ -78,7 +70,7 @@ viewStorage : Model -> Html Msg
 viewStorage model =
     Html.div []
         [ Html.input [ Html.Events.onInput Key ] []
-        , Html.input [ Html.Events.onInput Value ] []
+        , Html.input [ Html.Events.onInput SetValue ] []
         , viewKeyValues model
         ]
 
