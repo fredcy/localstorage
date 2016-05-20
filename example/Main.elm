@@ -3,8 +3,8 @@ module Main exposing (..)
 import Basics.Extra exposing (never)
 import Html exposing (Html)
 import Html.App as Html
-import Window
 import Task
+import Storage
 
 
 main : Program Never
@@ -17,26 +17,25 @@ main =
         }
 
 
-type alias Model =
-    Window.Size
+type alias Model = {
+      length : Int
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { width = 0, height = 0 }
-    , Task.perform never WindowSize Window.size
+    ( { length = 0 }
+    , Cmd.none
     )
 
 
 type Msg
-    = WindowSize Window.Size
+    = Length Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        WindowSize size ->
-            size ! []
+    model ! []
 
 
 view : Model -> Html Msg
@@ -46,4 +45,4 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Window.resizes WindowSize
+    Sub.none
