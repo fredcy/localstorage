@@ -5,6 +5,7 @@ effect module LocalStorage
         , get
         , set
         , remove
+        , clear
         , keys
         , changes
         )
@@ -55,6 +56,11 @@ set =
 remove : String -> Task Error ()
 remove =
     Native.LocalStorage.remove
+
+
+clear : Task Error ()
+clear =
+    Native.LocalStorage.clear
 
 
 keys : Task Error (List String)

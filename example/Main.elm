@@ -36,11 +36,11 @@ init =
 type Msg
     = Error LocalStorage.Error
     | SetValue String
-    | ValueSet String
     | Key String
     | Keys (List String)
     | KeyValue String (Maybe String)
-    | ValueRemoved
+    | Clear
+    | Refresh
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,15 +48,9 @@ update msg model =
     case msg |> Debug.log "msg" of
         SetValue val ->
             if val == "" then
-                model ! [ Task.perform Error (always ValueRemoved) (LocalStorage.remove model.key) ]
+                model ! [ Task.perform Error (always Refresh) (LocalStorage.remove model.key) ]
             else
-                model ! [ Task.perform Error ValueSet (LocalStorage.set model.key val) ]
-
-        ValueSet _ ->
-            model ! [ Task.perform Error Keys LocalStorage.keys ]
-
-        ValueRemoved ->
-            model ! [ Task.perform Error Keys LocalStorage.keys ]
+                model ! [ Task.perform Error (always Refresh) (LocalStorage.set model.key val) ]
 
         Key key ->
             { model | key = key } ! []
@@ -75,6 +69,12 @@ update msg model =
 
                 Nothing ->
                     model ! []
+
+        Clear ->
+            model ! [ Task.perform Error (always Refresh) LocalStorage.clear ]
+
+        Refresh ->
+            model ! [ Task.perform Error Keys LocalStorage.keys ]
 
         Error err ->
             model ! []
@@ -103,6 +103,7 @@ viewStorage model =
         [ Html.input [ Html.Events.onInput Key ] []
         , Html.input [ Html.Events.onInput SetValue ] []
         , viewKeyValues model
+        , viewClearButton model
         ]
 
 
@@ -116,16 +117,21 @@ viewKey model key =
     let
         valDisplay =
             case Dict.get key model.values of
-              Just val ->
-                  Html.text val
-              Nothing ->
-                  Html.text "(none)"
+                Just val ->
+                    Html.text val
+
+                Nothing ->
+                    Html.text "(none)"
     in
-      Html.li []
-              [ Html.text key
-              , Html.text ": "
-              , valDisplay
-              ]
+        Html.li []
+            [ Html.text key
+            , Html.text ": "
+            , valDisplay
+            ]
+
+
+viewClearButton model =
+    Html.button [ Html.Events.onClick Clear ] [ Html.text "clear" ]
 
 
 subscriptions : Model -> Sub Msg

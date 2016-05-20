@@ -16,6 +16,8 @@ var _fredcy$storage$Native_LocalStorage = function()
 	}
     }
 
+    var unit = {ctor: '_Tuple0'};
+
 
     function get (key) {
         return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
@@ -30,9 +32,7 @@ var _fredcy$storage$Native_LocalStorage = function()
     function remove (key) {
         return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
             localStorage.removeItem(key);
-            return callback(_elm_lang$core$Native_Scheduler.succeed(
-                {ctor: '_Tuple0'}
-            ));
+            return callback(_elm_lang$core$Native_Scheduler.succeed( unit ));
         });
     }
     
@@ -44,7 +44,7 @@ var _fredcy$storage$Native_LocalStorage = function()
             _keys.push(key);
         }
         return callback(_elm_lang$core$Native_Scheduler.succeed(
-            _elm_lang$core$Native_List.fromArray(_keys)
+            _elm_lang$core$Native_List.fromArray( _keys )
         ));
     });
 
@@ -52,16 +52,39 @@ var _fredcy$storage$Native_LocalStorage = function()
     function set(key, value) {
         return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
             localStorage.setItem(key, value);
-            return callback(_elm_lang$core$Native_Scheduler.succeed(value));
+            return callback(_elm_lang$core$Native_Scheduler.succeed( value ));
         });
     }
 
 
-    return {
-        get: get,
-        set: F2(set),
-        remove: remove,
-        keys: keys,
-    };
+    var clear = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+        localStorage.clear();
+        return callback(_elm_lang$core$Native_Scheduler.succeed( unit ));
+    });
+
+
+    var storageFail = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+            return callback(_elm_lang$core$Native_Scheduler.fail({ctor: 'NoStorage'}));
+    });
+    
+
+    if (storageAvailable('localStorage')) {
+        return {
+            get: get,
+            set: F2(set),
+            remove: remove,
+            clear: clear,
+            keys: keys,
+        }
+    }
+    else {
+        return {
+            get: storageFail,
+            set: storageFail,
+            remove: storageFail,
+            clear: storageFail,
+            keys: storageFail,
+        }
+    }
 
 }();
