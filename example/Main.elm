@@ -4,6 +4,7 @@ import Basics.Extra exposing (never)
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.App as Html
+import Html.Attributes as Html
 import Html.Events
 import Task
 import LocalStorage
@@ -19,43 +20,52 @@ main =
         }
 
 
+type alias Key =
+    String
+
+
+type alias Value =
+    String
+
+
 type alias Model =
-    { keys : List String
-    , key : String
-    , values : Dict String String
+    { keys : List Key
+    , key : Key
+    , values : Dict Key Value
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { key = "default", keys = [], values = Dict.empty }
-    , Task.perform Error Keys LocalStorage.keys
+    , Task.perform Error RequestValues LocalStorage.keys
     )
 
 
 type Msg
     = Error LocalStorage.Error
-    | SetValue String
-    | Key String
-    | Keys (List String)
-    | KeyValue String (Maybe String)
+    | SetValue Key Value
+    | SetKey Value
+    | RequestValues (List Key)
+    | KeyValue Key (Maybe Value)
     | Clear
     | Refresh
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
-        SetValue val ->
+        SetValue key val ->
             if val == "" then
-                model ! [ Task.perform Error (always Refresh) (LocalStorage.remove model.key) ]
+                model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
             else
-                model ! [ Task.perform Error (always Refresh) (LocalStorage.set model.key val) ]
+                model ! [ Task.perform Error (always Refresh) (LocalStorage.set key val) ]
 
-        Key key ->
+        SetKey key ->
             { model | key = key } ! []
 
-        Keys keys ->
+        RequestValues keys ->
             { model | keys = keys } ! [ requestValues keys ]
 
         KeyValue key valueMaybe ->
@@ -74,13 +84,16 @@ update msg model =
             model ! [ Task.perform Error (always Refresh) LocalStorage.clear ]
 
         Refresh ->
-            model ! [ Task.perform Error Keys LocalStorage.keys ]
+            model ! [ Task.perform Error RequestValues LocalStorage.keys ]
 
         Error err ->
             model ! []
 
+        NoOp ->
+            model ! []
 
-requestValues : List String -> Cmd Msg
+
+requestValues : List Key -> Cmd Msg
 requestValues keys =
     let
         requestKey key =
@@ -92,16 +105,14 @@ requestValues keys =
 view : Model -> Html Msg
 view model =
     Html.div []
-        [ Html.text (toString model)
-        , viewStorage model
-        ]
+        [ viewStorage model ]
 
 
 viewStorage : Model -> Html Msg
 viewStorage model =
     Html.div []
-        [ Html.input [ Html.Events.onInput Key ] []
-        , Html.input [ Html.Events.onInput SetValue ] []
+        [ Html.input [ Html.Events.onInput SetKey, Html.id "key" ] []
+        , Html.input [ Html.Events.onInput (SetValue model.key) ] []
         , viewKeyValues model
         , viewClearButton model
         ]
@@ -112,13 +123,22 @@ viewKeyValues model =
     Html.ol [] (List.map (viewKey model) model.keys)
 
 
-viewKey : Model -> String -> Html Msg
+valEdit key val =
+    Html.input
+        [ Html.class "valEdit"
+        , Html.Events.onInput (SetValue key)
+        , Html.value val
+        ]
+        []
+
+
+viewKey : Model -> Key -> Html Msg
 viewKey model key =
     let
         valDisplay =
             case Dict.get key model.values of
                 Just val ->
-                    Html.text val
+                    valEdit key val
 
                 Nothing ->
                     Html.text "(none)"
