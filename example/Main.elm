@@ -15,17 +15,17 @@ from localstorage.
 
 import Basics.Extra exposing (never)
 import Dict exposing (Dict)
-import Html exposing (Html)
-import Html.App as Html
-import Html.Attributes as Html
-import Html.Events as Html
+import Html as H exposing (Html)
+import Html.App as H
+import Html.Attributes as HA
+import Html.Events as HE
 import Task
 import LocalStorage
 
 
 main : Program Never
 main =
-    Html.program
+    H.program
         { init = init
         , update = update
         , view = view
@@ -131,7 +131,7 @@ requestValues keys =
 
 view : Model -> Html Msg
 view model =
-    Html.div []
+    H.div []
         [ viewNewEdit model
         , viewKeyValueTable model
         , viewClearButton model
@@ -140,41 +140,50 @@ view model =
 
 viewNewEdit : Model -> Html Msg
 viewNewEdit model =
-    Html.div [ Html.class "newEdit pure-form" ]
-        [ Html.label [ Html.for "key" ] [ Html.text "key" ]
-        , Html.input [ Html.onInput SetEditKey, Html.id "key" ] []
-        , Html.label [ Html.for "value" ] [ Html.text "value" ]
-        , Html.input [ Html.onInput (SetValue model.editKey), Html.id "value" ] []
+    H.form [ HA.class "newEdit pure-form" ]
+        [ H.fieldset []
+            [ H.legend [] [ H.text "New key/value" ]
+            , H.input
+                [ HE.onInput SetEditKey
+                , HA.placeholder "key"
+                ]
+                []
+            , H.input
+                [ HE.onInput (SetValue model.editKey)
+                , HA.placeholder "value"
+                ]
+                []
+            ]
         ]
 
 
 viewKeyValueTable : Model -> Html Msg
 viewKeyValueTable model =
-    Html.table [ Html.class "keyValues pure-table" ]
-        [ Html.thead []
-            [ Html.tr []
-                [ Html.td [] [ Html.text "key" ]
-                , Html.td [] [ Html.text "value" ]
+    H.table [ HA.class "keyValues pure-table" ]
+        [ H.thead []
+            [ H.tr []
+                [ H.td [] [ H.text "key" ]
+                , H.td [] [ H.text "value" ]
                 ]
             ]
-        , Html.tbody [] (List.map (viewTableRow model) model.keys)
+        , H.tbody [] (List.map (viewTableRow model) model.keys)
         ]
 
 
 viewTableRow : Model -> Key -> Html Msg
 viewTableRow model key =
-    Html.tr []
-        [ Html.td [] [ Html.text <| "\"" ++ key ++ "\"" ]
-        , Html.td [] [ valDisplay model.values key ]
+    H.tr []
+        [ H.td [] [ H.text <| "\"" ++ key ++ "\"" ]
+        , H.td [] [ valDisplay model.values key ]
         ]
 
 
 valEdit : Key -> Value -> Html Msg
 valEdit key val =
-    Html.input
-        [ Html.class "valEdit"
-        , Html.onInput (SetValue key)
-        , Html.value val
+    H.input
+        [ HA.class "valEdit"
+        , HE.onInput (SetValue key)
+        , HA.value val
         ]
         []
 
@@ -185,16 +194,16 @@ valDisplay values key =
             valEdit key val
 
         Nothing ->
-            Html.text "(none)"
+            H.text "(none)"
 
 
 viewClearButton : Model -> Html Msg
 viewClearButton model =
-    Html.button
-        [ Html.onClick Clear
-        , Html.class "pure-button"
+    H.button
+        [ HE.onClick Clear
+        , HA.class "pure-button"
         ]
-        [ Html.text "clear all" ]
+        [ H.text "clear all" ]
 
 
 {-| Subscribe to localstorage events. These events generally trigger only for
