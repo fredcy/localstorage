@@ -143,6 +143,8 @@ viewNewEdit model =
     H.form [ HA.class "newEdit pure-form" ]
         [ H.fieldset []
             [ H.legend [] [ H.text "New key/value" ]
+            , H.div []
+                [ H.text "Set new key and value here. They are set as soon as both are not empty." ]
             , H.input
                 [ HE.onInput SetEditKey
                 , HA.placeholder "key"
@@ -166,13 +168,13 @@ viewKeyValueTable model =
                 , H.td [] [ H.text "value" ]
                 ]
             ]
-        , H.tbody [] (List.map (viewTableRow model) model.keys)
+        , H.tbody [] (List.indexedMap (viewTableRow model) model.keys)
         ]
 
 
-viewTableRow : Model -> Key -> Html Msg
-viewTableRow model key =
-    H.tr []
+viewTableRow : Model -> Int -> Key -> Html Msg
+viewTableRow model rowi key =
+    H.tr [ HA.classList [ ("pure-table-odd", rowi % 2 == 1) ] ]
         [ H.td [] [ H.text <| "\"" ++ key ++ "\"" ]
         , H.td [] [ valDisplay model.values key ]
         ]

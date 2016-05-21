@@ -13,9 +13,26 @@ effect module LocalStorage
         , changes
         )
 
-{-| TODO
+{-|
 
-@docs set, get, keys
+This library offers simple access to the browser's localstorage via Commands (to
+create, read, update, and delete values) and Subscription (to be notified of
+changes). Only String keys and values are allowed.
+
+# Commands for retrieving
+@docs get, keys
+
+# Commands for changing
+@docs set, remove, clear
+
+# Subscriptions
+@docs changes, Event
+
+# Types for storage
+@docs Key, Value
+
+# Errors
+@docs Error
 
 -}
 
@@ -27,14 +44,20 @@ import Process
 import Task exposing (Task)
 
 
+{-| All keys are String values.
+-}
 type alias Key =
     String
 
 
+{-| All stored values are Strings.
+-}
 type alias Value =
     String
 
 
+{-| A `LocalStorage.changes` subscription produces `Event` values.
+-}
 type alias Event =
     { key : Key
     , oldValue : Value
@@ -43,8 +66,16 @@ type alias Event =
     }
 
 
+{-| Commands can produce Error values. The only comprised value is `NoStorage`
+for when localstorage is not available at all in the current window.
+-}
 type Error
     = NoStorage
+
+
+
+-- Convert javascript storage event to Event value.
+-- See https://developer.mozilla.org/en-US/docs/Web/API/StorageEvent
 
 
 event : Json.Decode.Decoder Event
@@ -56,36 +87,50 @@ event =
         |: ("url" := Json.Decode.string)
 
 
-{-| get a value in storage.
+{-| Retrieve the string value for a given key. Yields Maybe.Nothing if the key
+does not exist in storage. Task will fail with NoStorage if localStorage is not
+available in the browser.
 -}
 get : String -> Task Error (Maybe String)
 get =
     Native.LocalStorage.get
 
 
-{-| Set a value in storage.
+{-| Sets the string value for a given key and passes through the string value as
+the task result for chaining. Task will fail with NoStorage if localStorage is
+not available in the browser.
 -}
 set : String -> String -> Task Error String
 set =
     Native.LocalStorage.set
 
 
-remove : String -> Task Error ()
+{-| Removes the value for a given key and passes through the string key as the
+task result for chaining. Task will fail with NoStorage if localStorage is not
+available in the browser.
+-}
+remove : String -> Task Error String
 remove =
     Native.LocalStorage.remove
 
 
+{-| Removes all keys and values from localstorage. Returns unit as task result.
+-}
 clear : Task Error ()
 clear =
     Native.LocalStorage.clear
 
 
+{-| Returns all keys from localstorage.
+-}
 keys : Task Error (List String)
 keys =
     Native.LocalStorage.keys
 
 
-{-| Subscribe to any changes in storage.
+{-| Subscribe to any changes in storage. These events occur only when
+localstorage is changed in a different window than the one of the current
+program.
 -}
 changes : (Event -> msg) -> Sub msg
 changes tagger =
@@ -123,6 +168,12 @@ init =
 
 (&>) t1 t2 =
     t1 `Task.andThen` \_ -> t2
+
+
+
+-- All of the SUBSCRIPTIONS and EFFECT MANAGER section code here is standard
+-- machinery for an effect manager. The only part specific to LocalStorage is
+-- the case below that uses Dom.onWindow.
 
 
 onEffects : Platform.Router msg Event -> List (MySub msg) -> State msg -> Task Never (State msg)

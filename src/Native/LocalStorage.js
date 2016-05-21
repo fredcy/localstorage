@@ -1,6 +1,5 @@
 // Code borrowed shamelessly from https://github.com/w0rm/elm-flatris
 
-
 var _fredcy$storage$Native_LocalStorage = function()
 {
     function storageAvailable(type) {
@@ -38,7 +37,7 @@ var _fredcy$storage$Native_LocalStorage = function()
     function remove (key) {
         return nativeBinding(function(callback) {
             localStorage.removeItem(key);
-            return callback(succeed( unit ));
+            return callback(succeed( key ));
         });
     }
     
