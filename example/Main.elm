@@ -18,7 +18,7 @@ import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.App as Html
 import Html.Attributes as Html
-import Html.Events
+import Html.Events as Html
 import Task
 import LocalStorage
 
@@ -132,55 +132,69 @@ requestValues keys =
 view : Model -> Html Msg
 view model =
     Html.div []
-        [ viewStorage model ]
-
-
-viewStorage : Model -> Html Msg
-viewStorage model =
-    Html.div []
-        [ Html.input [ Html.Events.onInput SetEditKey, Html.id "key" ] []
-        , Html.input [ Html.Events.onInput (SetValue model.editKey) ] []
-        , viewKeyValues model
+        [ viewNewEdit model
+        , viewKeyValueTable model
         , viewClearButton model
         ]
 
 
-viewKeyValues : Model -> Html Msg
-viewKeyValues model =
-    Html.ol [] (List.map (viewKey model) model.keys)
+viewNewEdit : Model -> Html Msg
+viewNewEdit model =
+    Html.div [ Html.class "newEdit pure-form" ]
+        [ Html.label [ Html.for "key" ] [ Html.text "key" ]
+        , Html.input [ Html.onInput SetEditKey, Html.id "key" ] []
+        , Html.label [ Html.for "value" ] [ Html.text "value" ]
+        , Html.input [ Html.onInput (SetValue model.editKey), Html.id "value" ] []
+        ]
+
+
+viewKeyValueTable : Model -> Html Msg
+viewKeyValueTable model =
+    Html.table [ Html.class "keyValues pure-table" ]
+        [ Html.thead []
+            [ Html.tr []
+                [ Html.td [] [ Html.text "key" ]
+                , Html.td [] [ Html.text "value" ]
+                ]
+            ]
+        , Html.tbody [] (List.map (viewTableRow model) model.keys)
+        ]
+
+
+viewTableRow : Model -> Key -> Html Msg
+viewTableRow model key =
+    Html.tr []
+        [ Html.td [] [ Html.text <| "\"" ++ key ++ "\"" ]
+        , Html.td [] [ valDisplay model.values key ]
+        ]
 
 
 valEdit : Key -> Value -> Html Msg
 valEdit key val =
     Html.input
         [ Html.class "valEdit"
-        , Html.Events.onInput (SetValue key)
+        , Html.onInput (SetValue key)
         , Html.value val
         ]
         []
 
 
-viewKey : Model -> Key -> Html Msg
-viewKey model key =
-    let
-        valDisplay =
-            case Dict.get key model.values of
-                Just val ->
-                    valEdit key val
+valDisplay values key =
+    case Dict.get key values of
+        Just val ->
+            valEdit key val
 
-                Nothing ->
-                    Html.text "(none)"
-    in
-        Html.li []
-            [ Html.text key
-            , Html.text ": "
-            , valDisplay
-            ]
+        Nothing ->
+            Html.text "(none)"
 
 
 viewClearButton : Model -> Html Msg
 viewClearButton model =
-    Html.button [ Html.Events.onClick Clear ] [ Html.text "clear" ]
+    Html.button
+        [ Html.onClick Clear
+        , Html.class "pure-button"
+        ]
+        [ Html.text "clear all" ]
 
 
 {-| Subscribe to localstorage events. These events generally trigger only for
