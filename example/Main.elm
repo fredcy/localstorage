@@ -161,7 +161,7 @@ view model =
         , H.h2 [] [ H.text "Events" ]
         , H.div []
             [ H.text "Most recent event is listed first. Only events from another window "
-            , H.a [ HA.href "/", HA.target "_blank" ] [ H.text "(open one)" ]
+            , H.a [ HA.href "/", HA.target "_blank" ] [ H.text "(open one here)" ]
             , H.text " will appear."
             ]
         , viewEvents model
@@ -240,7 +240,7 @@ viewClearButton model =
         [ HE.onClick Clear
         , HA.class "pure-button"
         ]
-        [ H.text "clear all" ]
+        [ H.text "clear all keys and values" ]
 
 
 viewEvents : Model -> Html Msg

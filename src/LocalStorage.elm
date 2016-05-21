@@ -6,6 +6,7 @@ effect module LocalStorage
         , Key
         , Value
         , get
+        , getJson
         , set
         , remove
         , clear
@@ -15,14 +16,14 @@ effect module LocalStorage
 
 {-|
 
-This library offers simple access to the browser's localstorage via Commands (to
+This library offers simple access to the browser's localstorage via Tasks (to
 create, read, update, and delete values) and Subscription (to be notified of
 changes). Only String keys and values are allowed.
 
-# Commands for retrieving
-@docs get, keys
+# Tasks for retrieving
+@docs get, getJson, keys
 
-# Commands for changing
+# Tasks for changing
 @docs set, remove, clear
 
 # Subscriptions
@@ -41,7 +42,7 @@ import Json.Decode exposing ((:=))
 import Json.Decode.Extra exposing ((|:))
 import Native.LocalStorage
 import Process
-import Task exposing (Task)
+import Task exposing (Task, andThen, succeed, fail)
 
 
 {-| All keys are String values.
@@ -66,11 +67,11 @@ type alias Event =
     }
 
 
-{-| Commands can produce Error values. The only comprised value is `NoStorage`
-for when localstorage is not available at all in the current window.
+{-| Tasks can produce Error values. See the docs for each such task.
 -}
 type Error
     = NoStorage
+    | UnexpectedPayload String
 
 
 
@@ -126,9 +127,42 @@ keys =
     Native.LocalStorage.keys
 
 
+{-| Retrieves the value for a given key and parses it using the provided JSON
+decoder. Yields Maybe.Nothing if the key does not exist in storage. Task will
+fail with NoStorage if localStorage is not available in the browser, or
+UnexpectedPayload if there was a parsing error.
+-}
+getJson : Json.Decode.Decoder value -> String -> Task Error (Maybe value)
+getJson decoder key =
+    let
+        decode maybe =
+            case maybe of
+                Just str ->
+                    fromJson decoder str
+
+                Nothing ->
+                    succeed Nothing
+    in
+        (get key) `andThen` decode
+
+
+
+-- Decodes json and handles parse errors
+
+
+fromJson : Json.Decode.Decoder value -> String -> Task Error (Maybe value)
+fromJson decoder str =
+    case Json.Decode.decodeString decoder str of
+        Ok v ->
+            succeed (Just v)
+
+        Err msg ->
+            fail (UnexpectedPayload msg)
+
+
 {-| Subscribe to any changes in localstorage. These events occur only when
 localstorage is changed in a different window than the one of the current
-program. Only the `set` command results in an event; `remove` operations happen
+program. Only the `set` task results in an event; `remove` operations happen
 without notice (unfortunately).
 -}
 changes : (Event -> msg) -> Sub msg
