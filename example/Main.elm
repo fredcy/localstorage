@@ -5,8 +5,7 @@ module Main exposing (main)
 It displays the current value of the browser's localstorage and allows the user
 to create, edit, and delete keys and values.
 
-The Model.keys and Model.values values are treated here as a shadow of
-localstorage.
+Model.keys and Model.values are treated here as a copy that tracks localstorage.
 
 Setting a value to empty is treated here as request to remove the key/value pair
 from localstorage.
@@ -67,8 +66,10 @@ type Msg
     = Error LocalStorage.Error
     | SetValue Key Value
     | SetEditKey Key
+    | CreateKey
     | SetLocalKeys (List Key)
     | SetLocalValue Key (Maybe Value)
+    | Remove Key
     | Clear
     | Refresh
     | ChangeEvent LocalStorage.Event
@@ -79,15 +80,25 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
         SetValue key val ->
-            if val == "" then
-                model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
-            else
-                -- todo: Could optimize this to avoid full refresh, but have to
-                -- handle case of new key too.
-                model ! [ Task.perform Error (always Refresh) (LocalStorage.set key val) ]
+            model
+                ! [ Task.perform Error
+                        (always (SetLocalValue key (Just val)))
+                        (LocalStorage.set key val)
+                  ]
+
+        Remove key ->
+            model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
 
         SetEditKey key ->
             { model | editKey = key } ! []
+
+        CreateKey ->
+            case model.editKey of
+                "" ->
+                    model ! []
+
+                _ ->
+                    model ! [ Task.perform Error (always Refresh) (LocalStorage.set model.editKey "") ]
 
         SetLocalKeys keys ->
             { model | keys = keys } ! [ requestValues keys ]
@@ -161,18 +172,12 @@ viewNewEdit : Model -> Html Msg
 viewNewEdit model =
     H.form [ HA.class "newEdit pure-form" ]
         [ H.fieldset []
-            [ H.div []
-                [ H.text "Set new key and value here. They are set in localstorage as soon as both are not empty. (Yes, this is awkward.)" ]
-            , H.input
+            [ H.input
                 [ HE.onInput SetEditKey
-                , HA.placeholder "key"
+                , HA.placeholder "new key"
                 ]
                 []
-            , H.input
-                [ HE.onInput (SetValue model.editKey)
-                , HA.placeholder "value"
-                ]
-                []
+            , H.button [ HE.onClick CreateKey ] [ H.text "create key" ]
             ]
         ]
 
@@ -184,6 +189,7 @@ viewKeyValueTable model =
             [ H.tr []
                 [ H.td [] [ H.text "key" ]
                 , H.td [] [ H.text "value" ]
+                , H.td [] []
                 ]
             ]
         , H.tbody [] (List.indexedMap (viewTableRow model) model.keys)
@@ -195,6 +201,7 @@ viewTableRow model rowi key =
     H.tr [ HA.classList [ ( "pure-table-odd", rowi % 2 == 1 ) ] ]
         [ H.td [] [ H.text <| "\"" ++ key ++ "\"" ]
         , H.td [] [ valDisplay model.values key ]
+        , H.td [] [ H.button [ HE.onClick (Remove key) ] [ H.text "remove" ] ]
         ]
 
 
@@ -208,10 +215,20 @@ valEdit key val =
         []
 
 
+valEditTextarea : Key -> Value -> Html Msg
+valEditTextarea key val =
+    H.textarea
+        [ HA.class "valEdit"
+        , HA.cols 40
+        , HE.onInput (SetValue key)
+        ]
+        [ H.text val ]
+
+
 valDisplay values key =
     case Dict.get key values of
         Just val ->
-            valEdit key val
+            valEditTextarea key val
 
         Nothing ->
             H.text "(none)"

@@ -24,6 +24,14 @@ var _fredcy$storage$Native_LocalStorage = function()
     var Just = _elm_lang$core$Maybe$Just;
     
 
+    function set(key, value) {
+        return nativeBinding(function(callback) {
+            localStorage.setItem(key, value);
+            return callback(succeed( unit ));
+        });
+    }
+
+
     function get (key) {
         return nativeBinding(function(callback) {
             var value = localStorage.getItem(key);
@@ -52,14 +60,6 @@ var _fredcy$storage$Native_LocalStorage = function()
             _elm_lang$core$Native_List.fromArray( _keys )
         ));
     });
-
-
-    function set(key, value) {
-        return nativeBinding(function(callback) {
-            localStorage.setItem(key, value);
-            return callback(succeed( unit ));
-        });
-    }
 
 
     var clear = nativeBinding(function(callback) {

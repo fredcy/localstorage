@@ -126,7 +126,7 @@ keys =
     Native.LocalStorage.keys
 
 
-{-| Subscribe to any changes in storage. These events occur only when
+{-| Subscribe to any changes in localstorage. These events occur only when
 localstorage is changed in a different window than the one of the current
 program. Only the `set` command results in an event; `remove` operations happen
 without notice (unfortunately).
