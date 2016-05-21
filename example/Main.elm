@@ -51,12 +51,14 @@ type alias Model =
     , values :
         Dict Key Value
         -- a shadow of the keys and values in LocalStorate
+    , events :
+        List LocalStorage.Event
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { editKey = "default", keys = [], values = Dict.empty }
+    ( { editKey = "default", keys = [], values = Dict.empty, events = [] }
     , Task.perform Error SetLocalKeys LocalStorage.keys
     )
 
@@ -80,8 +82,8 @@ update msg model =
             if val == "" then
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
             else
-                -- Could optimize this to avoid full refresh, but have to handle
-                -- case of new key too.
+                -- todo: Could optimize this to avoid full refresh, but have to
+                -- handle case of new key too.
                 model ! [ Task.perform Error (always Refresh) (LocalStorage.set key val) ]
 
         SetEditKey key ->
@@ -109,7 +111,13 @@ update msg model =
             model ! [ Task.perform Error SetLocalKeys LocalStorage.keys ]
 
         ChangeEvent event ->
-            model ! []
+            let
+                -- todo: make this smarter, more selective update
+                ( model', cmd' ) =
+                    update Refresh model
+            in
+                { model' | events = event :: model.events }
+                    ! [ cmd' ]
 
         Error err ->
             model ! []
@@ -132,9 +140,20 @@ requestValues keys =
 view : Model -> Html Msg
 view model =
     H.div []
-        [ viewNewEdit model
+        [ H.h1 [] [ H.text "LocalStorage example" ]
+        , H.h2 [] [ H.text "Create new key and value" ]
+        , viewNewEdit model
+        , H.h2 [] [ H.text "Current keys and values" ]
         , viewKeyValueTable model
+        , H.h2 [] [ H.text "Global changes" ]
         , viewClearButton model
+        , H.h2 [] [ H.text "Events" ]
+        , H.div []
+            [ H.text "Most recent event is listed first. Only events from another window "
+            , H.a [ HA.href "/", HA.target "_blank" ] [ H.text "(open one)" ]
+            , H.text " will appear."
+            ]
+        , viewEvents model
         ]
 
 
@@ -142,9 +161,8 @@ viewNewEdit : Model -> Html Msg
 viewNewEdit model =
     H.form [ HA.class "newEdit pure-form" ]
         [ H.fieldset []
-            [ H.legend [] [ H.text "New key/value" ]
-            , H.div []
-                [ H.text "Set new key and value here. They are set as soon as both are not empty." ]
+            [ H.div []
+                [ H.text "Set new key and value here. They are set in localstorage as soon as both are not empty. (Yes, this is awkward.)" ]
             , H.input
                 [ HE.onInput SetEditKey
                 , HA.placeholder "key"
@@ -174,7 +192,7 @@ viewKeyValueTable model =
 
 viewTableRow : Model -> Int -> Key -> Html Msg
 viewTableRow model rowi key =
-    H.tr [ HA.classList [ ("pure-table-odd", rowi % 2 == 1) ] ]
+    H.tr [ HA.classList [ ( "pure-table-odd", rowi % 2 == 1 ) ] ]
         [ H.td [] [ H.text <| "\"" ++ key ++ "\"" ]
         , H.td [] [ valDisplay model.values key ]
         ]
@@ -208,9 +226,15 @@ viewClearButton model =
         [ H.text "clear all" ]
 
 
-{-| Subscribe to localstorage events. These events generally trigger only for
-localstorage changes made in *other* windows, not the window of this program.
--}
+viewEvents : Model -> Html Msg
+viewEvents model =
+    let
+        viewEvent event =
+            H.li [] [ H.text (toString event) ]
+    in
+        H.ul [] (List.map viewEvent model.events)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     LocalStorage.changes ChangeEvent
