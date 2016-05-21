@@ -16,55 +16,61 @@ var _fredcy$storage$Native_LocalStorage = function()
 	}
     }
 
+    // shorthand for native APIs
     var unit = {ctor: '_Tuple0'};
-
+    var nativeBinding = _elm_lang$core$Native_Scheduler.nativeBinding;
+    var succeed = _elm_lang$core$Native_Scheduler.succeed;
+    var fail = _elm_lang$core$Native_Scheduler.fail;
+    var Nothing = _elm_lang$core$Maybe$Nothing;
+    var Just = _elm_lang$core$Maybe$Just;
+    
 
     function get (key) {
-        return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+        return nativeBinding(function(callback) {
             var value = localStorage.getItem(key);
-            return callback(_elm_lang$core$Native_Scheduler.succeed(
-                (value === null) ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$Maybe$Just(value)
+            return callback(succeed(
+                (value === null) ? Nothing : Just(value)
             ));
         });
     }
     
 
     function remove (key) {
-        return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+        return nativeBinding(function(callback) {
             localStorage.removeItem(key);
-            return callback(_elm_lang$core$Native_Scheduler.succeed( unit ));
+            return callback(succeed( unit ));
         });
     }
     
 
-    var keys = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+    var keys = nativeBinding(function(callback) {
         var _keys = [];
         for (var i = 0; i < localStorage.length; i++) {
             var key = localStorage.key(i);
             _keys.push(key);
         }
-        return callback(_elm_lang$core$Native_Scheduler.succeed(
+        return callback(succeed(
             _elm_lang$core$Native_List.fromArray( _keys )
         ));
     });
 
 
     function set(key, value) {
-        return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+        return nativeBinding(function(callback) {
             localStorage.setItem(key, value);
-            return callback(_elm_lang$core$Native_Scheduler.succeed( value ));
+            return callback(succeed( value ));
         });
     }
 
 
-    var clear = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+    var clear = nativeBinding(function(callback) {
         localStorage.clear();
-        return callback(_elm_lang$core$Native_Scheduler.succeed( unit ));
+        return callback(succeed( unit ));
     });
 
 
-    var storageFail = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-            return callback(_elm_lang$core$Native_Scheduler.fail({ctor: 'NoStorage'}));
+    var storageFail = nativeBinding(function(callback) {
+            return callback(fail( {ctor: 'NoStorage'} ));
     });
     
 
