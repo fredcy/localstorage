@@ -96,25 +96,23 @@ get =
     Native.LocalStorage.get
 
 
-{-| Sets the string value for a given key and passes through the string value as
-the task result for chaining. Task will fail with NoStorage if localStorage is
-not available in the browser.
+{-| Sets the string value for a given key. Task will fail with NoStorage if
+localStorage is not available in the browser.
 -}
-set : String -> String -> Task Error String
+set : String -> String -> Task Error ()
 set =
     Native.LocalStorage.set
 
 
-{-| Removes the value for a given key and passes through the string key as the
-task result for chaining. Task will fail with NoStorage if localStorage is not
-available in the browser.
+{-| Removes the value for a given key. Task will fail with NoStorage if
+localStorage is not available in the browser.
 -}
-remove : String -> Task Error String
+remove : String -> Task Error ()
 remove =
     Native.LocalStorage.remove
 
 
-{-| Removes all keys and values from localstorage. Returns unit as task result.
+{-| Removes all keys and values from localstorage.
 -}
 clear : Task Error ()
 clear =

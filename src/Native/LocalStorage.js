@@ -37,7 +37,7 @@ var _fredcy$storage$Native_LocalStorage = function()
     function remove (key) {
         return nativeBinding(function(callback) {
             localStorage.removeItem(key);
-            return callback(succeed( key ));
+            return callback(succeed( unit ));
         });
     }
     
@@ -57,7 +57,7 @@ var _fredcy$storage$Native_LocalStorage = function()
     function set(key, value) {
         return nativeBinding(function(callback) {
             localStorage.setItem(key, value);
-            return callback(succeed( value ));
+            return callback(succeed( unit ));
         });
     }
 
