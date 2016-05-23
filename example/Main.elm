@@ -12,7 +12,6 @@ from localstorage.
 
 -}
 
-import Basics.Extra exposing (never)
 import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.App as H

@@ -39,7 +39,6 @@ changes). Only String keys and values are allowed.
 
 import Dom.LowLevel as Dom
 import Json.Decode exposing ((:=))
-import Json.Decode.Extra exposing ((|:))
 import Native.LocalStorage
 import Process
 import Task exposing (Task, andThen, succeed, fail)
@@ -82,11 +81,11 @@ type Error
 
 event : Json.Decode.Decoder Event
 event =
-    Json.Decode.succeed Event
-        |: ("key" := Json.Decode.string)
-        |: ("oldValue" := Json.Decode.string)
-        |: ("newValue" := Json.Decode.string)
-        |: ("url" := Json.Decode.string)
+    Json.Decode.object4 Event
+        ("key" := Json.Decode.string)
+        ("oldValue" := Json.Decode.string)
+        ("newValue" := Json.Decode.string)
+        ("url" := Json.Decode.string)
 
 
 {-| Retrieve the string value for a given key. Yields Maybe.Nothing if the key
