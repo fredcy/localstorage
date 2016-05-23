@@ -72,6 +72,7 @@ type alias Event =
 type Error
     = NoStorage
     | UnexpectedPayload String
+    | Overflow
 
 
 

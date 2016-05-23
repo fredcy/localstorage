@@ -26,8 +26,12 @@ var _fredcy$storage$Native_LocalStorage = function()
 
     function set(key, value) {
         return nativeBinding(function(callback) {
-            localStorage.setItem(key, value);
-            return callback(succeed( unit ));
+            try {
+                localStorage.setItem(key, value);
+                return callback(succeed( unit ));
+            } catch (e) {
+                return callback(fail( {'ctor': 'Overflow'} ));
+            }
         });
     }
 

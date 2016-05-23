@@ -18,6 +18,7 @@ import Html as H exposing (Html)
 import Html.App as H
 import Html.Attributes as HA
 import Html.Events as HE
+import String
 import Task
 import LocalStorage
 
@@ -52,12 +53,19 @@ type alias Model =
         -- a shadow of the keys and values in LocalStorate
     , events :
         List LocalStorage.Event
+    , errors :
+        List LocalStorage.Error
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { editKey = "default", keys = [], values = Dict.empty, events = [] }
+    ( { editKey = "default"
+      , keys = []
+      , values = Dict.empty
+      , events = []
+      , errors = []
+      }
     , Task.perform Error SetLocalKeys LocalStorage.keys
     )
 
@@ -73,6 +81,7 @@ type Msg
     | Clear
     | Refresh
     | ChangeEvent LocalStorage.Event
+    | TryToOverflow
     | NoOp
 
 
@@ -130,11 +139,28 @@ update msg model =
                 { model' | events = event :: model.events }
                     ! [ cmd' ]
 
+        TryToOverflow ->
+            let
+                testVal =
+                    stringPower 23 "xx"
+
+                _ =
+                    Debug.log "overflow test len" (String.length testVal)
+            in
+                model ! [ LocalStorage.set "overflowtest" testVal |> Task.perform Error (always Refresh) ]
+
         Error err ->
-            model ! []
+            { model | errors = err :: model.errors } ! []
 
         NoOp ->
             model ! []
+
+
+stringPower exp str =
+    if exp <= 1 then
+        str
+    else
+        stringPower (exp - 1) (str ++ str)
 
 
 {-| Create a command to request the values from localstorage of the given keys.
@@ -158,6 +184,10 @@ view model =
         , viewKeyValueTable model
         , H.h2 [] [ H.text "Global changes" ]
         , viewClearButton model
+        , H.br [] []
+        , viewOverflowButton model
+        , H.h2 [] [ H.text "Errors" ]
+        , viewErrors model
         , H.h2 [] [ H.text "Events" ]
         , H.div []
             [ H.text "Most recent event is listed first. Only events from another window "
@@ -170,15 +200,13 @@ view model =
 
 viewNewEdit : Model -> Html Msg
 viewNewEdit model =
-    H.form [ HA.class "newEdit pure-form" ]
-        [ H.fieldset []
-            [ H.input
-                [ HE.onInput SetEditKey
-                , HA.placeholder "new key"
-                ]
-                []
-            , H.button [ HE.onClick CreateKey ] [ H.text "create key" ]
+    H.div [ HA.class "newEdit pure-form" ]
+        [ H.input
+            [ HE.onInput SetEditKey
+            , HA.placeholder "new key"
             ]
+            []
+        , H.button [ HE.onClick CreateKey ] [ H.text "create key" ]
         ]
 
 
@@ -192,7 +220,11 @@ viewKeyValueTable model =
                 , H.td [] []
                 ]
             ]
-        , H.tbody [] (List.indexedMap (viewTableRow model) model.keys)
+        , H.tbody []
+            (model.keys
+                |> List.filter ((/=) "overflowtest")
+                |> List.indexedMap (viewTableRow model)
+            )
         ]
 
 
@@ -243,6 +275,15 @@ viewClearButton model =
         [ H.text "clear all keys and values" ]
 
 
+viewOverflowButton : Model -> Html Msg
+viewOverflowButton model =
+    H.button
+        [ HE.onClick TryToOverflow
+        , HA.class "pure-button"
+        ]
+        [ H.text "try to overflow" ]
+
+
 viewEvents : Model -> Html Msg
 viewEvents model =
     let
@@ -250,6 +291,26 @@ viewEvents model =
             H.li [] [ H.text (toString event) ]
     in
         H.ul [] (List.map viewEvent model.events)
+
+
+viewErrors : Model -> Html Msg
+viewErrors model =
+    let
+        errorStr error =
+            case error of
+                LocalStorage.NoStorage ->
+                    "NoStorage"
+
+                LocalStorage.Overflow ->
+                    "Overflow"
+
+                LocalStorage.UnexpectedPayload str ->
+                    "Unexpected Payload: " ++ str
+
+        viewError error =
+            H.li [] [ H.text (errorStr error) ]
+    in
+        H.ul [] (List.map viewError model.errors)
 
 
 subscriptions : Model -> Sub Msg
