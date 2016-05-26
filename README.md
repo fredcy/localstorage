@@ -14,6 +14,9 @@ source.  See the example/elm-package.json file for the necessary
 configuration. Even the `repository` name has to match for the native code to
 build.
 
+Another way is to "self publish" this module using [elm-ops-tooling](https://github.com/NoRedInk/elm-ops-tooling).
+See an [example](https://github.com/fredcy/elm-tangram-svg/blob/master/README.md#installation).
+
 ## Credits
 
 This work is derived directly from the LocalStorage.elm module in elm-flatris.
