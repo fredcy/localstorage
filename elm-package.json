@@ -1,12 +1,13 @@
 {
     "version": "1.0.0",
-    "summary": "Local storage",
-    "repository": "http://github.com/fredcy/storage.git",
+    "summary": "Local storage effects manager",
+    "repository": "http://github.com/fredcy/localstorage.git",
     "license": "BSD3",
     "source-directories": [
         "src"
     ],
     "exposed-modules": [
+	"LocalStorage"
     ],
     "native-modules": true,
     "dependencies": {
