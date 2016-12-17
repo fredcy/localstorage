@@ -38,6 +38,7 @@ changes). Only String keys and values are allowed.
 -}
 
 import Dom.LowLevel as Dom
+import Json.Encode
 import Json.Decode exposing (field)
 import Native.LocalStorage
 import Process
@@ -125,6 +126,15 @@ clear =
 keys : Task Error (List String)
 keys =
   Native.LocalStorage.keys
+
+
+{-| Converts given JSON value to a string and stores it under specified key.
+Task will fail with NoStorage if localStorage is not available in the browser.
+-}
+setJson : String -> Json.Encode.Value -> Task Error ()
+setJson key value =
+  Json.Encode.encode 0 value
+    |> set key
 
 
 {-| Retrieves the value for a given key and parses it using the provided JSON
