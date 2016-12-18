@@ -1,6 +1,6 @@
 // Code borrowed shamelessly from https://github.com/w0rm/elm-flatris
 
-var _szubtsovskiy$localstorage$Native_LocalStorage = function()
+var _fredcy$localstorage$Native_LocalStorage = function()
 {
     function storageAvailable(type) {
 	try {

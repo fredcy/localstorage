@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Local storage effects manager",
-    "repository": "http://github.com/szubtsovskiy/localstorage.git",
+    "repository": "http://github.com/fredcy/localstorage.git",
     "license": "BSD3",
     "source-directories": [
         "src"

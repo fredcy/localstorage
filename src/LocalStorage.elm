@@ -1,18 +1,18 @@
 effect module LocalStorage
-  where { subscription = MySub }
-  exposing
-    ( Error(..)
-    , Event
-    , Key
-    , Value
-    , get
-    , getJson
-    , set
-    , remove
-    , clear
-    , keys
-    , changes
-    )
+    where { subscription = MySub }
+    exposing
+        ( Error(..)
+        , Event
+        , Key
+        , Value
+        , get
+        , getJson
+        , set
+        , remove
+        , clear
+        , keys
+        , changes
+        )
 
 {-|
 
@@ -48,31 +48,31 @@ import Task exposing (Task, andThen, succeed, fail)
 {-| All keys are String values.
 -}
 type alias Key =
-  String
+    String
 
 
 {-| All stored values are Strings.
 -}
 type alias Value =
-  String
+    String
 
 
 {-| A `LocalStorage.changes` subscription produces `Event` values.
 -}
 type alias Event =
-  { key : Key
-  , oldValue : Value
-  , newValue : Value
-  , url : String
-  }
+    { key : Key
+    , oldValue : Value
+    , newValue : Value
+    , url : String
+    }
 
 
 {-| Tasks can produce Error values. See the docs for each such task.
 -}
 type Error
-  = NoStorage
-  | UnexpectedPayload String
-  | Overflow
+    = NoStorage
+    | UnexpectedPayload String
+    | Overflow
 
 
 
@@ -82,11 +82,11 @@ type Error
 
 event : Json.Decode.Decoder Event
 event =
-  Json.Decode.map4 Event
-    (field "key" Json.Decode.string)
-    (field "oldValue" Json.Decode.string)
-    (field "newValue" Json.Decode.string)
-    (field "url" Json.Decode.string)
+    Json.Decode.map4 Event
+        (field "key" Json.Decode.string)
+        (field "oldValue" Json.Decode.string)
+        (field "newValue" Json.Decode.string)
+        (field "url" Json.Decode.string)
 
 
 {-| Retrieve the string value for a given key. Yields Maybe.Nothing if the key
@@ -95,7 +95,7 @@ available in the browser.
 -}
 get : String -> Task Error (Maybe String)
 get =
-  Native.LocalStorage.get
+    Native.LocalStorage.get
 
 
 {-| Sets the string value for a given key. Task will fail with NoStorage if
@@ -103,7 +103,7 @@ localStorage is not available in the browser.
 -}
 set : String -> String -> Task Error ()
 set =
-  Native.LocalStorage.set
+    Native.LocalStorage.set
 
 
 {-| Removes the value for a given key. Task will fail with NoStorage if
@@ -111,21 +111,21 @@ localStorage is not available in the browser.
 -}
 remove : String -> Task Error ()
 remove =
-  Native.LocalStorage.remove
+    Native.LocalStorage.remove
 
 
 {-| Removes all keys and values from localstorage.
 -}
 clear : Task Error ()
 clear =
-  Native.LocalStorage.clear
+    Native.LocalStorage.clear
 
 
 {-| Returns all keys from localstorage.
 -}
 keys : Task Error (List String)
 keys =
-  Native.LocalStorage.keys
+    Native.LocalStorage.keys
 
 
 {-| Converts given JSON value to a string and stores it under specified key.
@@ -133,8 +133,8 @@ Task will fail with NoStorage if localStorage is not available in the browser.
 -}
 setJson : String -> Json.Encode.Value -> Task Error ()
 setJson key value =
-  Json.Encode.encode 0 value
-    |> set key
+    Json.Encode.encode 0 value
+        |> set key
 
 
 {-| Retrieves the value for a given key and parses it using the provided JSON
@@ -144,16 +144,16 @@ UnexpectedPayload if there was a parsing error.
 -}
 getJson : Json.Decode.Decoder value -> String -> Task Error (Maybe value)
 getJson decoder key =
-  let
-    decode maybe =
-      case maybe of
-        Just str ->
-          fromJson decoder str
+    let
+        decode maybe =
+            case maybe of
+                Just str ->
+                    fromJson decoder str
 
-        Nothing ->
-          succeed Nothing
-  in
-    (get key) |> andThen decode
+                Nothing ->
+                    succeed Nothing
+    in
+        (get key) |> andThen decode
 
 
 
@@ -162,12 +162,12 @@ getJson decoder key =
 
 fromJson : Json.Decode.Decoder value -> String -> Task Error (Maybe value)
 fromJson decoder str =
-  case Json.Decode.decodeString decoder str of
-    Ok v ->
-      succeed (Just v)
+    case Json.Decode.decodeString decoder str of
+        Ok v ->
+            succeed (Just v)
 
-    Err msg ->
-      fail (UnexpectedPayload msg)
+        Err msg ->
+            fail (UnexpectedPayload msg)
 
 
 {-| Subscribe to any changes in localstorage. These events occur only when
@@ -177,7 +177,7 @@ without notice (unfortunately).
 -}
 changes : (Event -> msg) -> Sub msg
 changes tagger =
-  subscription (MySub tagger)
+    subscription (MySub tagger)
 
 
 
@@ -185,12 +185,12 @@ changes tagger =
 
 
 type MySub msg
-  = MySub (Event -> msg)
+    = MySub (Event -> msg)
 
 
 subMap : (a -> b) -> MySub a -> MySub b
 subMap func (MySub tagger) =
-  MySub (tagger >> func)
+    MySub (tagger >> func)
 
 
 
@@ -198,19 +198,19 @@ subMap func (MySub tagger) =
 
 
 type alias State msg =
-  Maybe
-    { subs : List (MySub msg)
-    , pid : Process.Id
-    }
+    Maybe
+        { subs : List (MySub msg)
+        , pid : Process.Id
+        }
 
 
 init : Task Never (State msg)
 init =
-  Task.succeed Nothing
+    Task.succeed Nothing
 
 
 (&>) t1 t2 =
-  t1 |> Task.andThen (\_ -> t2)
+    t1 |> Task.andThen (\_ -> t2)
 
 
 
@@ -221,35 +221,35 @@ init =
 
 onEffects : Platform.Router msg Event -> List (MySub msg) -> State msg -> Task Never (State msg)
 onEffects router newSubs oldState =
-  case ( oldState, newSubs ) of
-    ( Nothing, [] ) ->
-      Task.succeed Nothing
+    case ( oldState, newSubs ) of
+        ( Nothing, [] ) ->
+            Task.succeed Nothing
 
-    ( Just { pid }, [] ) ->
-      Process.kill pid
-        &> Task.succeed Nothing
+        ( Just { pid }, [] ) ->
+            Process.kill pid
+                &> Task.succeed Nothing
 
-    ( Nothing, _ ) ->
-      Process.spawn (Dom.onWindow "storage" event (Platform.sendToSelf router))
-        |> Task.andThen
-            (\pid ->
-              Task.succeed (Just { subs = newSubs, pid = pid })
-            )
+        ( Nothing, _ ) ->
+            Process.spawn (Dom.onWindow "storage" event (Platform.sendToSelf router))
+                |> Task.andThen
+                    (\pid ->
+                        Task.succeed (Just { subs = newSubs, pid = pid })
+                    )
 
-    ( Just { pid }, _ ) ->
-      Task.succeed (Just { subs = newSubs, pid = pid })
+        ( Just { pid }, _ ) ->
+            Task.succeed (Just { subs = newSubs, pid = pid })
 
 
 onSelfMsg : Platform.Router msg Event -> Event -> State msg -> Task Never (State msg)
 onSelfMsg router dimensions state =
-  case state of
-    Nothing ->
-      Task.succeed state
+    case state of
+        Nothing ->
+            Task.succeed state
 
-    Just { subs } ->
-      let
-        send (MySub tagger) =
-          Platform.sendToApp router (tagger dimensions)
-      in
-        Task.sequence (List.map send subs)
-          &> Task.succeed state
+        Just { subs } ->
+            let
+                send (MySub tagger) =
+                    Platform.sendToApp router (tagger dimensions)
+            in
+                Task.sequence (List.map send subs)
+                    &> Task.succeed state
