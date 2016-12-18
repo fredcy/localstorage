@@ -14,7 +14,6 @@ from localstorage.
 
 import Dict exposing (Dict)
 import Html as H exposing (Html)
-import Html.App as H
 import Html.Attributes as HA
 import Html.Events as HE
 import String
@@ -22,7 +21,7 @@ import Task
 import LocalStorage
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
     H.program
         { init = init
@@ -65,13 +64,16 @@ init =
       , events = []
       , errors = []
       }
-    , Task.perform Error SetLocalKeys LocalStorage.keys
+    , Task.attempt OnKeys LocalStorage.keys
     )
 
 
 type Msg
-    = Error LocalStorage.Error
-    | SetValue Key Value
+    = SetValue Key Value
+    | AfterSetValue Key Value (Result LocalStorage.Error ())
+    | OnKeys (Result LocalStorage.Error (List Key))
+    | OnVoidOp (Result LocalStorage.Error ())
+    | OnGet Key (Result LocalStorage.Error (Maybe Value))
     | SetEditKey Key
     | CreateKey
     | SetLocalKeys (List Key)
@@ -81,21 +83,48 @@ type Msg
     | Refresh
     | ChangeEvent LocalStorage.Event
     | TryToOverflow
-    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
         SetValue key val ->
-            model
-                ! [ Task.perform Error
-                        (always (SetLocalValue key (Just val)))
-                        (LocalStorage.set key val)
-                  ]
+            model ! [ Task.attempt (AfterSetValue key val) (LocalStorage.set key val) ]
+
+        AfterSetValue key val result ->
+            case result of
+                Ok _ ->
+                    update (SetLocalValue key (Just val)) model
+
+                Err err ->
+                    onError err model
+
+        OnVoidOp result ->
+            case result of
+                Ok _ ->
+                    update Refresh model
+
+                Err err ->
+                    onError err model
+
+        OnGet key result ->
+            case result of
+                Ok maybeValue ->
+                    update (SetLocalValue key maybeValue) model
+
+                Err err ->
+                    onError err model
+
+        OnKeys result ->
+            case result of
+                Ok keys ->
+                    update (SetLocalKeys keys) model
+
+                Err err ->
+                    onError err model
 
         Remove key ->
-            model ! [ Task.perform Error (always Refresh) (LocalStorage.remove key) ]
+            model ! [ Task.attempt OnVoidOp (LocalStorage.remove key) ]
 
         SetEditKey key ->
             { model | editKey = key } ! []
@@ -106,7 +135,7 @@ update msg model =
                     model ! []
 
                 _ ->
-                    model ! [ Task.perform Error (always Refresh) (LocalStorage.set model.editKey "") ]
+                    model ! [ Task.attempt OnVoidOp (LocalStorage.set model.editKey "") ]
 
         SetLocalKeys keys ->
             { model | keys = keys } ! [ requestValues keys ]
@@ -115,28 +144,28 @@ update msg model =
             case valueMaybe of
                 Just value ->
                     let
-                        values' =
+                        values_ =
                             Dict.insert key value model.values
                     in
-                        { model | values = values' } ! []
+                        { model | values = values_ } ! []
 
                 Nothing ->
                     model ! []
 
         Clear ->
-            model ! [ Task.perform Error (always Refresh) LocalStorage.clear ]
+            model ! [ Task.attempt OnVoidOp LocalStorage.clear ]
 
         Refresh ->
-            model ! [ Task.perform Error SetLocalKeys LocalStorage.keys ]
+            model ! [ Task.attempt OnKeys LocalStorage.keys ]
 
         ChangeEvent event ->
             let
                 -- todo: make this smarter, more selective update
-                ( model', cmd' ) =
+                ( model_, cmd_ ) =
                     update Refresh model
             in
-                { model' | events = event :: model.events }
-                    ! [ cmd' ]
+                { model_ | events = event :: model.events }
+                    ! [ cmd_ ]
 
         TryToOverflow ->
             let
@@ -146,13 +175,12 @@ update msg model =
                 _ =
                     Debug.log "overflow test len" (String.length testVal)
             in
-                model ! [ LocalStorage.set "overflowtest" testVal |> Task.perform Error (always Refresh) ]
+                model ! [ LocalStorage.set "overflowtest" testVal |> Task.attempt OnVoidOp ]
 
-        Error err ->
-            { model | errors = err :: model.errors } ! []
 
-        NoOp ->
-            model ! []
+onError : LocalStorage.Error -> Model -> ( Model, Cmd Msg )
+onError err model =
+    { model | errors = err :: model.errors } ! []
 
 
 stringPower exp str =
@@ -168,7 +196,7 @@ requestValues : List Key -> Cmd Msg
 requestValues keys =
     let
         requestKey key =
-            Task.perform Error (SetLocalValue key) (LocalStorage.get key)
+            Task.attempt (OnGet key) (LocalStorage.get key)
     in
         Cmd.batch <| List.map requestKey keys
 

@@ -38,7 +38,8 @@ changes). Only String keys and values are allowed.
 -}
 
 import Dom.LowLevel as Dom
-import Json.Decode exposing ((:=))
+import Json.Encode
+import Json.Decode exposing (field)
 import Native.LocalStorage
 import Process
 import Task exposing (Task, andThen, succeed, fail)
@@ -81,11 +82,11 @@ type Error
 
 event : Json.Decode.Decoder Event
 event =
-    Json.Decode.object4 Event
-        ("key" := Json.Decode.string)
-        ("oldValue" := Json.Decode.string)
-        ("newValue" := Json.Decode.string)
-        ("url" := Json.Decode.string)
+    Json.Decode.map4 Event
+        (field "key" Json.Decode.string)
+        (field "oldValue" Json.Decode.string)
+        (field "newValue" Json.Decode.string)
+        (field "url" Json.Decode.string)
 
 
 {-| Retrieve the string value for a given key. Yields Maybe.Nothing if the key
@@ -127,6 +128,15 @@ keys =
     Native.LocalStorage.keys
 
 
+{-| Converts given JSON value to a string and stores it under specified key.
+Task will fail with NoStorage if localStorage is not available in the browser.
+-}
+setJson : String -> Json.Encode.Value -> Task Error ()
+setJson key value =
+    Json.Encode.encode 0 value
+        |> set key
+
+
 {-| Retrieves the value for a given key and parses it using the provided JSON
 decoder. Yields Maybe.Nothing if the key does not exist in storage. Task will
 fail with NoStorage if localStorage is not available in the browser, or
@@ -143,7 +153,7 @@ getJson decoder key =
                 Nothing ->
                     succeed Nothing
     in
-        (get key) `andThen` decode
+        (get key) |> andThen decode
 
 
 
@@ -200,7 +210,7 @@ init =
 
 
 (&>) t1 t2 =
-    t1 `Task.andThen` \_ -> t2
+    t1 |> Task.andThen (\_ -> t2)
 
 
 
@@ -221,8 +231,10 @@ onEffects router newSubs oldState =
 
         ( Nothing, _ ) ->
             Process.spawn (Dom.onWindow "storage" event (Platform.sendToSelf router))
-                `Task.andThen` \pid ->
-                                Task.succeed (Just { subs = newSubs, pid = pid })
+                |> Task.andThen
+                    (\pid ->
+                        Task.succeed (Just { subs = newSubs, pid = pid })
+                    )
 
         ( Just { pid }, _ ) ->
             Task.succeed (Just { subs = newSubs, pid = pid })

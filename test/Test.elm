@@ -1,14 +1,13 @@
 module Test exposing (main)
 
 import Html as H exposing (Html)
-import Html.App
-import Json.Decode exposing ((:=))
+import Json.Decode exposing (field)
 import LocalStorage
 import Task
 
 
 main =
-    Html.App.program
+    H.program
         { init = init
         , update = update
         , view = view
@@ -21,50 +20,46 @@ type alias Model =
 
 
 type Msg
-    = NoOp
-    | Error LocalStorage.Error
-    | SetResult
-    | GetResult (Maybe String)
-    | GetJsonResult (Maybe String)
+    = OnSet (Result LocalStorage.Error ())
+    | OnGet (Result LocalStorage.Error (Maybe String))
+    | OnGetJson (Result LocalStorage.Error (Maybe String))
 
 
 init : ( Model, Cmd Msg )
 init =
     ( "begin"
-    , LocalStorage.set "foo" "{ \"bar\": \"blah\" }" |> Task.perform Error (always SetResult)
+    , LocalStorage.set "foo" "{ \"bar\": \"blah\" }" |> Task.attempt OnSet
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg |> Debug.log "msg" of
-        SetResult ->
-            ( model
-            , LocalStorage.get "foo" |> Task.perform Error (GetResult)
-            )
+        OnSet result ->
+            case result of
+                Ok _ ->
+                    model ! [ LocalStorage.get "foo" |> Task.attempt OnGet ]
 
-        GetResult valMaybe ->
+                Err _ ->
+                    errorCase msg model
+
+        OnGet result ->
             let
                 decoder =
-                    ("bar" := Json.Decode.string)
+                    (field "bar" Json.Decode.string)
             in
-                case valMaybe of
-                    Just val ->
-                        ( model
-                        , LocalStorage.getJson decoder "foo" |> Task.perform Error GetJsonResult
-                        )
+                case result of
+                    Ok _ ->
+                        model ! [ LocalStorage.getJson decoder "foo" |> Task.attempt OnGetJson ]
 
-                    _ ->
+                    Err _ ->
                         errorCase msg model
 
-        GetJsonResult valMaybe ->
-            if valMaybe == Just "blah" then
+        OnGetJson result ->
+            if result == Ok (Just "blah") then
                 doneCase msg model
             else
                 errorCase msg model
-
-        _ ->
-            errorCase msg model
 
 
 errorCase msg model =

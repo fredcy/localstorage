@@ -1,14 +1,13 @@
 module Test2 exposing (main)
 
 import Html as H exposing (Html)
-import Html.App
-import Json.Decode exposing ((:=))
+import Json.Decode exposing (field)
 import LocalStorage
 import Task exposing (Task)
 
 
 main =
-    Html.App.program
+    H.program
         { init = init
         , update = update
         , view = view
@@ -24,51 +23,50 @@ type alias Model =
 
 
 type Msg
-    = Error LocalStorage.Error
-    | Clear ()
-    | SetResult ()
-    | GetResult (Maybe String)
-    | RemoveResult ()
-    | KeysResult (List LocalStorage.Key)
+    = OnClear (Result LocalStorage.Error ())
+    | OnSet (Result LocalStorage.Error ())
+    | OnGet (Result LocalStorage.Error (Maybe String))
+    | OnRemove (Result LocalStorage.Error ())
+    | OnKeys (Result LocalStorage.Error (List LocalStorage.Key))
 
 
 {-| A sequence of commands and expected resulting messages
 -}
 sequence : List ( Cmd Msg, Msg )
 sequence =
-    [ ( LocalStorage.clear |> Task.perform Error Clear
-      , Clear ()
+    [ ( LocalStorage.clear |> Task.attempt OnClear
+      , OnClear (Ok ())
       )
-    , ( LocalStorage.set "foo" "bar" |> Task.perform Error SetResult
-      , SetResult ()
+    , ( LocalStorage.set "foo" "bar" |> Task.attempt OnSet
+      , OnSet (Ok ())
       )
-    , ( LocalStorage.get "foo" |> Task.perform Error GetResult
-      , GetResult (Just "bar")
+    , ( LocalStorage.get "foo" |> Task.attempt OnGet
+      , OnGet (Ok (Just "bar"))
       )
-    , ( LocalStorage.set "foojson" "{ \"bar\": \"blatz\" }" |> Task.perform Error SetResult
-      , SetResult ()
+    , ( LocalStorage.set "foojson" "{ \"bar\": \"blatz\" }" |> Task.attempt OnSet
+      , OnSet (Ok ())
       )
-    , ( LocalStorage.getJson decoder "foojson" |> Task.perform Error GetResult
-      , GetResult (Just "blatz")
+    , ( LocalStorage.getJson decoder "foojson" |> Task.attempt OnGet
+      , OnGet (Ok (Just "blatz"))
       )
-    , ( LocalStorage.keys |> Task.perform Error (KeysResult << List.sort)
-      , KeysResult [ "foo", "foojson" ]
+    , ( LocalStorage.keys |> Task.attempt (OnKeys << (Result.map List.sort))
+      , OnKeys (Ok [ "foo", "foojson" ])
       )
-    , ( LocalStorage.remove "foo" |> Task.perform Error RemoveResult
-      , RemoveResult ()
+    , ( LocalStorage.remove "foo" |> Task.attempt OnRemove
+      , OnRemove (Ok ())
       )
-    , ( LocalStorage.keys |> Task.perform Error (KeysResult << List.sort)
-      , KeysResult [ "foojson" ]
+    , ( LocalStorage.keys |> Task.attempt (OnKeys << (Result.map List.sort))
+      , OnKeys (Ok [ "foojson" ])
       )
-    , ( LocalStorage.get "foo" |> Task.perform Error GetResult
-      , GetResult Nothing
+    , ( LocalStorage.get "foo" |> Task.attempt OnGet
+      , OnGet (Ok Nothing)
       )
     ]
 
 
 decoder : Json.Decode.Decoder String
 decoder =
-    ("bar" := Json.Decode.string)
+    (field "bar" Json.Decode.string)
 
 
 init : ( Model, Cmd Msg )
@@ -80,15 +78,15 @@ init =
 
 nextCmd : List ( Cmd Msg, a ) -> Cmd Msg
 nextCmd sequence =
-    List.head sequence |> Maybe.map fst |> Maybe.withDefault Cmd.none
+    List.head sequence |> Maybe.map Tuple.first |> Maybe.withDefault Cmd.none
 
 
 update msg model =
     let
-        ( model', cmd ) =
+        ( model_, cmd ) =
             checkMsg (Debug.log "msg" msg) model
     in
-        ( model', cmd )
+        ( model_, cmd )
 
 
 view : Model -> Html Msg
@@ -125,16 +123,16 @@ checkMsg msg model =
         ( cmd, expected ) :: rest ->
             if msg == expected then
                 let
-                    cmd' =
+                    cmd_ =
                         nextCmd rest
 
                     message =
-                        if cmd' == Cmd.none then
+                        if cmd_ == Cmd.none then
                             "passed"
                         else
                             "continuing"
                 in
-                    ( { model | sequence = rest, message = message }, cmd' )
+                    ( { model | sequence = rest, message = message }, cmd_ )
             else
                 let
                     testError =

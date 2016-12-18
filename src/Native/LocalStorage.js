@@ -83,7 +83,7 @@ var _fredcy$localstorage$Native_LocalStorage = function()
             set: F2(set),
             remove: remove,
             clear: clear,
-            keys: keys,
+            keys: keys
         }
     }
     else {
@@ -92,7 +92,7 @@ var _fredcy$localstorage$Native_LocalStorage = function()
             set: storageFail,
             remove: storageFail,
             clear: storageFail,
-            keys: storageFail,
+            keys: storageFail
         }
     }
 
