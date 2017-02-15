@@ -8,6 +8,7 @@ effect module LocalStorage
         , get
         , getJson
         , set
+        , setJson
         , remove
         , clear
         , keys
