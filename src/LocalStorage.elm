@@ -8,6 +8,7 @@ effect module LocalStorage
         , get
         , getJson
         , set
+        , setJson
         , remove
         , clear
         , keys
@@ -24,7 +25,7 @@ changes). Only String keys and values are allowed.
 @docs get, getJson, keys
 
 # Tasks for changing
-@docs set, remove, clear
+@docs set, setJson, remove, clear
 
 # Subscriptions
 @docs changes, Event
