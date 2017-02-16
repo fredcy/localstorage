@@ -1,4 +1,4 @@
-module Test exposing (main)
+module TestHtml exposing (main)
 
 import Html as H exposing (Html)
 import Json.Decode exposing (field)
