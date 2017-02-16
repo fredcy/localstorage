@@ -72,10 +72,11 @@ var _fredcy$localstorage$Native_LocalStorage = function()
     });
 
 
-    var storageFail = nativeBinding(function(callback) {
+    var storageFail = function() {
+        return nativeBinding(function(callback) {
             return callback(fail( {ctor: 'NoStorage'} ));
-    });
-    
+        });
+    }
 
     if (storageAvailable('localStorage')) {
         return {
