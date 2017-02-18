@@ -93,7 +93,7 @@ var _fredcy$localstorage$Native_LocalStorage = function()
     }
 
 
-    if (storageAvailable('localStorage')) {
+    if (isStorageAvailable()) {
         return {
             get: get,
             set: F2(set),
@@ -107,7 +107,7 @@ var _fredcy$localstorage$Native_LocalStorage = function()
             get: storageFail1,
             set: F2(storageFail2),
             remove: storageFail1,
-            clear: storageFail1,
+            clear: storageFail,
             keys: storageFail1
         }
     }
