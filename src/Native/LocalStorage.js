@@ -15,6 +15,15 @@ var _fredcy$localstorage$Native_LocalStorage = function()
 	}
     }
 
+    function isStorageAvailable() {
+        if (typeof window === "undefined"){
+            return false;
+        } else if (!storageAvailable('localStorage') || typeof window.localStorage === "undefined"){
+            return false;
+        }
+        return true;
+    }
+
     // shorthand for native APIs
     var unit = {ctor: '_Tuple0'};
     var nativeBinding = _elm_lang$core$Native_Scheduler.nativeBinding;
@@ -79,9 +88,12 @@ var _fredcy$localstorage$Native_LocalStorage = function()
     function storageFail2(a, b) {
 	return storageFail;
     }
+    function storageFail1(a) {
+        return storageFail;
+    }
 
 
-    if (storageAvailable('localStorage')) {
+    if (isStorageAvailable()) {
         return {
             get: get,
             set: F2(set),
@@ -92,9 +104,9 @@ var _fredcy$localstorage$Native_LocalStorage = function()
     }
     else {
         return {
-            get: storageFail,
+            get: storageFail1,
             set: F2(storageFail2),
-            remove: storageFail,
+            remove: storageFail1,
             clear: storageFail,
             keys: storageFail
         }
