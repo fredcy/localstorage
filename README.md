@@ -17,6 +17,10 @@ build.
 Another way is to "self publish" this module using [elm-ops-tooling](https://github.com/NoRedInk/elm-ops-tooling).
 See an [example](https://github.com/fredcy/elm-tangram-svg/blob/master/README.md#installation).
 
+The [elm-github-install](https://github.com/gdotdesign/elm-github-install) tools are another way to install this package.
+
+Finally, the [localize.py script](https://github.com/fredcy/elm-tools/blob/master/localize.py) can convert this code to use native JS names consistent with whatever module it is used along with (as source).
+
 ## Credits
 
 This work is derived directly from the LocalStorage.elm module in elm-flatris.
