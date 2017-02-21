@@ -108,7 +108,7 @@ var _fredcy$localstorage$Native_LocalStorage = function()
             set: F2(storageFail2),
             remove: storageFail1,
             clear: storageFail,
-            keys: storageFail1
+            keys: storageFail
         }
     }
 
